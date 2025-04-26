@@ -1,4 +1,4 @@
-name: Deploy project to Github Pages
+name: Deploy project to Cloudflare Pages
 
 on:
   # Runs on pushes targeting the default branch
@@ -25,7 +25,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    if: github.repository == 'MultiMote/niimblue'
+    if: github.repository == 'Haocen/niimblue'
 
     steps:
       - name: Checkout
@@ -37,10 +37,6 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: ./package-lock.json
-
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v5
 
       - name: Install dependencies
         run: npm install
@@ -66,21 +62,13 @@ jobs:
           PAGE_URL: ${{ steps.pages.outputs.origin }}
           LAST_MODIFIED: ${{ github.event.repository.updated_at }}
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy Niimblue
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: ./dist
+          wranglerVersion: "3.72.2" # A version later than 3.48.0 is required for uploading env vars from wrangler.toml
+          apiToken: ${{ secrets.HX_CF_API_TOKEN }}
+          accountId: ${{ secrets.HX_CLOUDFLARE_ACCOUNT_ID }}
+          command: |
+            pages deploy ./dist --project-name=niimblue
+            pages deploy ./dist --project-name=niimbot
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    name: Deploy
-    if: github.repository == 'MultiMote/niimblue'
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
